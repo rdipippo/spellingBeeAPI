@@ -1,16 +1,20 @@
-import * as cdk from 'aws-cdk-lib';
+import { aws_apigateway as apigw, StackProps, Stack } from 'aws-cdk-lib';
+import * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 
-export class SpellingBeeApiStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+export class SpellingBeeApiStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const handler = new lambda.Function(this, "lambda.getGameInfoHandler", {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      code: lambda.Code.fromAsset("resources"),
+      handler: "getGameInfoLambda.handler"
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'SpellingBeeApiQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const api = new apigw.RestApi(this, 'spelling-bee-api')
+    api.root.addMethod('GET', new apigw.HttpIntegration('https://freebee.fun/cgi-bin/random'));
+    const game = api.root.addResource('game');
+    game.addMethod('GET', new apigw.LambdaIntegration(handler));
   }
 }
